@@ -1,5 +1,5 @@
 use actix::{Actor, Addr};
-use axum::{Json, Router, extract::State, response::IntoResponse, routing::get};
+use axum::{Json, Router, extract::State, routing::get};
 use axum_actix::counter::{self, Counter};
 use serde::Serialize;
 
@@ -22,6 +22,16 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
+#[derive(Clone)]
+struct AppState {
+    counter: Addr<Counter>,
+}
+
+#[derive(Serialize)]
+struct GetCounter {
+    count: usize,
+}
+
 async fn index() -> String {
     String::from("Hello, world!")
 }
@@ -31,20 +41,10 @@ async fn get_count(State(state): State<AppState>) -> Json<GetCounter> {
     Json(GetCounter { count })
 }
 
-async fn incr_count(State(state): State<AppState>) -> impl IntoResponse {
+async fn incr_count(State(state): State<AppState>) {
     state.counter.do_send(counter::Increment);
 }
 
-async fn decr_count(State(state): State<AppState>) -> impl IntoResponse {
+async fn decr_count(State(state): State<AppState>) {
     state.counter.do_send(counter::Decrement);
-}
-
-#[derive(Clone)]
-struct AppState {
-    counter: Addr<Counter>,
-}
-
-#[derive(Serialize)]
-struct GetCounter {
-    count: usize,
 }
